@@ -2,7 +2,7 @@
 
 ## Documentation and field mappings
 
-Read https://developers.buymeacoffee.com/, its README.md, and apireference.md before writing schemas. Both documentation pages are marked unmaintained. Live response shapes for supporters, extras, and subscriptions were verified on 9 Sep 2026 by the account owner's shape probe, as reported by the user. The probe exposed keys and types without personal values. This confirms response shapes, not a passing live test of the revised server.
+Read https://developers.buymeacoffee.com/, its README.md, and apireference.md before writing schemas. Both documentation pages are marked unmaintained. Live response shapes for supporters, extras, and subscriptions were verified on 9 Sep 2026 by the account owner's shape probe, as reported by the user. The probe exposed keys and types without personal values. The user subsequently confirmed that all three list tools worked in Claude Code. The revised summary has not been tested against the live account by the agent.
 
 The documentation uses support_id, support_created_on, support_coffee_price, support_coffees, support_currency, support_note, is_refunded, country, payer_email, support_email, supporter_name, and payer_name. The normalized support amount is support_coffee_price multiplied by support_coffees. Prefer a nonempty supporter_name, then payer_name. Prefer payer_email, then support_email. Missing fields become null rather than invented values.
 
@@ -20,7 +20,13 @@ The documentation shows timestamps without a timezone. Interpret those timestamp
 
 Records remain open JSON objects instead of speculative record schemas. Amounts accept finite decimal strings or numbers. Totals keep currencies separate and round floating-point noise to eight decimal places. Invalid amounts, currencies, or dates needed for a summary cause a runtime error instead of a misleading total. Null refund and revocation flags mean false, as in the documented examples. True, 1, "1", and "true" mean true.
 
-max_pages applies separately to each endpoint. Summary defaults to 10 pages per endpoint; other tools default to 5. Every cap is at most 20. Walk pages without assuming undocumented date ordering, then filter the requested window. This may read older pages. Summary and subscriptions return a runtime error if the cap leaves unread pages, since their contracted response shapes have no field to disclose partial results. Empty histories return zero counts. List tools preserve API order and expose conservative has_more when a page or row limit leaves unread data.
+The user's first live client use on 9 Sep 2026 observed five rows per page, with per_page not tunable. Both supporters and extras were newest-first within and across pages, using support_created_on and purchased_on respectively. Hundreds of zero-amount supports from free downloads caused the old summary to hit its ten-page default before reading the full history.
+
+max_pages applies separately to each endpoint. Summary now defaults to 20 pages per endpoint; other tools default to 5. Every cap is at most 20. Only summary uses date-based early stopping. Each endpoint tracks the previous row timestamp and requires every subsequent timestamp to be less than or equal to it, including across page boundaries. Equal timestamps are valid. Once a whole nonempty page is strictly before the window start, summary stops that endpoint if the ordering observed so far remains valid. A mixed page or a row exactly at the window start does not trigger stopping. Any ordering break or invalid timestamp disables date-based stopping for the rest of that endpoint's walk. Verification covers fetched rows; it cannot prove the order of unseen pages.
+
+A null next_page_url always completes pagination, including a short last page reached exactly at max_pages. A shorter page with a non-null next_page_url is not alone proof that the endpoint is exhausted. If date-based stopping is unavailable and the cap leaves pages unread, summary retains the incomplete-result error. The result's early_stop is true if either endpoint skipped remaining pages after the date cutoff. Normal completion at a null next_page_url gives early_stop=false unless the other endpoint stopped by date. pages_fetched includes every fetched page across both endpoints, including the older page used to establish the cutoff. List pagination and subscription cap handling are unchanged.
+
+supports.count includes both paid and free non-refunded supports within the window. supports.free_count counts the subset with normalized amount zero, including free downloads. Refunded, older, and future records do not contribute to free_count. Paid currency totals are unchanged. Empty histories return zero counts.
 
 ## Transport and privacy
 
@@ -36,4 +42,6 @@ The Codex CLI help confirms --env <KEY=VALUE>. README commands use that flag. Th
 
 Only the specified runtime and development dependencies are used. The lockfile is included in the repository. Installs use temporary store and cache locations under /tmp through command-line settings, with no repository .npmrc. Runtime performs no disk writes. Test fixtures are synthetic and are excluded from the npm package, along with source, tests, this file, and the changelog.
 
-The optional live test requires BMAC_LIVE=1 and BMAC_TOKEN. It is skipped in this agent's run. The user's earlier live test failed on the error-key empty response; their subsequent shape probe supplied the verification above. No credentials were read or used by the agent. No package was published and no GitHub resource was created.
+The build clears generated dist output and compiles src/index.ts and its imports. This keeps unrelated duplicate source files and stale generated copies out of the npm package. Existing untracked duplicate files outside dist are left untouched.
+
+The optional live test requires BMAC_LIVE=1 and BMAC_TOKEN. It is skipped in this agent's run. The user's first client use confirmed the list tools and exposed the summary page-cap failure described above. No credentials were read or used by the agent. No package was published and no GitHub resource was created.

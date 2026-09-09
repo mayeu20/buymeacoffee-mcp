@@ -3,10 +3,10 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { ApiClient, ApiError, type ClientOptions, type Row } from "./client.js";
 import { protectJson } from "./redact.js";
-import { purchase, summarize, summaryPageStop, supporter, timestamp } from "./summary.js";
+import { purchase, summarize, supporter, timestamp } from "./summary.js";
 
 export function createServer(options: ClientOptions = {}): McpServer {
-  const server = new McpServer({ name: "buymeacoffee-mcp", version: "0.1.1" });
+  const server = new McpServer({ name: "buymeacoffee-mcp", version: "0.1.0" });
   const api = new ApiClient(options);
   const emails = z.boolean().default(false);
   const pages = (defaultValue: number) => z.number().int().min(1).max(20).default(defaultValue);
@@ -59,15 +59,14 @@ export function createServer(options: ClientOptions = {}): McpServer {
     return { returned: page.rows.length, subscriptions: page.rows, ...(page.message === undefined ? {} : { message: page.message }) };
   }));
   server.registerTool("summary", {
-    description: "Total supports and Extras by currency, counting free supports separately and excluding refunds and revoked purchases. Stops after an older page when observed ordering is newest-first, or returns an error if the page cap prevents completion.",
-    inputSchema: { days: z.number().int().min(1).max(365).default(30), max_pages: pages(20) }, annotations,
+    description: "Total one-off supports and Extras by currency over a recent window, excluding refunds and revoked purchases. Returns an error if the page cap prevents a complete summary.",
+    inputSchema: { days: z.number().int().min(1).max(365).default(30), max_pages: pages(10) }, annotations,
   }, (args) => run(false, async () => {
     const now = new Date();
-    const from = now.getTime() - args.days * 86_400_000;
-    const supports = await api.walk("supporters", args.max_pages, { stopAfterPage: summaryPageStop(from, "support_created_on") });
-    const extras = await api.walk("extras", args.max_pages, { stopAfterPage: summaryPageStop(from, "purchased_on") });
+    const supports = await api.walk("supporters", args.max_pages);
+    const extras = await api.walk("extras", args.max_pages);
     if (supports.has_more || extras.has_more) throw new ApiError("Summary is incomplete at max_pages. Increase max_pages up to 20; totals have not been returned.");
-    return summarize(supports.rows, extras.rows, args.days, now, supports.pages_fetched + extras.pages_fetched, Boolean(supports.early_stop || extras.early_stop));
+    return summarize(supports.rows, extras.rows, args.days, now, supports.pages_fetched + extras.pages_fetched);
   }));
   return server;
 }

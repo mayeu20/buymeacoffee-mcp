@@ -105,8 +105,7 @@ export class ApiClient {
   async walk(endpoint: Endpoint, maxPages: number, options: {
     limit?: number;
     matches?: (row: Row) => boolean;
-    stopAfterPage?: (rows: Row[]) => boolean;
-  } = {}): Promise<{ rows: Row[]; pages_fetched: number; has_more: boolean; message?: string; early_stop?: boolean }> {
+  } = {}): Promise<{ rows: Row[]; pages_fetched: number; has_more: boolean; message?: string }> {
     let url = this.safeUrl(endpoint === "subscriptions" ? "subscriptions?status=all" : endpoint, endpoint);
     const seen = new Set<string>();
     const rows: Row[] = [];
@@ -126,9 +125,8 @@ export class ApiClient {
       }
       rows.push(...page.data.filter(options.matches ?? (() => true)));
       const next = page.next_page_url === null ? null : this.safeUrl(page.next_page_url, endpoint);
-      const earlyStop = next !== null && options.stopAfterPage?.(page.data) === true;
-      if (!next || earlyStop || pages === maxPages || rows.length >= limit) {
-        return { rows: rows.slice(0, limit), pages_fetched: pages, has_more: rows.length > limit || (!earlyStop && next !== null), ...(earlyStop ? { early_stop: true } : {}) };
+      if (!next || pages === maxPages || rows.length >= limit) {
+        return { rows: rows.slice(0, limit), pages_fetched: pages, has_more: rows.length > limit || next !== null };
       }
       url = next;
     }

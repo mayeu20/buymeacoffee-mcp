@@ -77,9 +77,9 @@ describe("SDK dispatch", () => {
       expect(summary.isError).not.toBe(true);
       expect(summary.structuredContent).toEqual({
         window_days: 30, from: expect.any(String), to: expect.any(String),
-        supports: { count: 0, free_count: 0, total_by_currency: {} },
+        supports: { count: 0, total_by_currency: {} },
         extras: { count: 0, total_by_currency: {} },
-        excluded: { refunded_supports: 0, revoked_extras: 0 }, pages_fetched: 2, early_stop: false,
+        excluded: { refunded_supports: 0, revoked_extras: 0 }, pages_fetched: 2,
       });
       expect(summary.content).toEqual([{ type: "text", text: JSON.stringify(summary.structuredContent, null, 2) }]);
     } finally { await session.close(); }

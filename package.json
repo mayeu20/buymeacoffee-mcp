@@ -1,6 +1,6 @@
 {
   "name": "buymeacoffee-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Read your Buy Me a Coffee account through MCP over stdio.",
   "type": "module",
   "bin": {
@@ -31,7 +31,7 @@
     "creator"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc",
     "test": "vitest run",
     "dev": "tsx src/index.ts",
     "prepack": "pnpm build"

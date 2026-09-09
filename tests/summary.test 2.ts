@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseAmount, purchase, summarize, summaryPageStop, supporter, timestamp } from "../src/summary.js";
+import { parseAmount, purchase, summarize, supporter, timestamp } from "../src/summary.js";
 import { fixture } from "./fixture-server.js";
 
 describe("normalization and summary", () => {
@@ -26,9 +26,9 @@ describe("normalization and summary", () => {
     const extras = (await fixture("extras-1")).data;
     expect(summarize(supports, extras, 30, new Date("2026-09-09T12:00:00Z"), 3)).toEqual({
       window_days: 30, from: "2026-08-10T12:00:00.000Z", to: "2026-09-09T12:00:00.000Z",
-      supports: { count: 2, free_count: 0, total_by_currency: { USD: 10, EUR: 3 } },
+      supports: { count: 2, total_by_currency: { USD: 10, EUR: 3 } },
       extras: { count: 1, total_by_currency: { USD: 8 } },
-      excluded: { refunded_supports: 1, revoked_extras: 1 }, pages_fetched: 3, early_stop: false,
+      excluded: { refunded_supports: 1, revoked_extras: 1 }, pages_fetched: 3,
     });
   });
   it("includes exact boundaries and excludes future rows", () => {
@@ -38,33 +38,10 @@ describe("normalization and summary", () => {
       { ...row, support_created_on: "2026-09-09T12:00:00Z" },
       { ...row, support_created_on: "2026-09-09T12:00:01Z" },
     ], [], 1, new Date("2026-09-09T12:00:00Z"), 1);
-    expect(output.supports).toEqual({ count: 2, free_count: 0, total_by_currency: { USD: 0.6 } });
+    expect(output.supports).toEqual({ count: 2, total_by_currency: { USD: 0.6 } });
   });
   it("returns zero totals for empty histories", () => {
-    expect(summarize([], [], 30, new Date(), 2).supports).toEqual({ count: 0, free_count: 0, total_by_currency: {} });
-  });
-  it("counts free supports within the window without changing paid totals", () => {
-    const row = { support_coffee_price: "0.00", support_coffees: 1, support_currency: "USD", support_created_on: "2026-09-09T09:00:00Z" };
-    const result = summarize([
-      row, { ...row, support_coffee_price: 0 }, { ...row, support_coffee_price: "5.00" },
-      { ...row, is_refunded: 1 },
-      { ...row, support_created_on: "2026-07-01T09:00:00Z" },
-      { ...row, support_created_on: "2026-09-10T09:00:00Z" },
-    ], [], 30, new Date("2026-09-09T12:00:00Z"), 2);
-    expect(result.supports).toEqual({ count: 3, free_count: 2, total_by_currency: { USD: 5 } });
-    expect(result.excluded.refunded_supports).toBe(1);
-  });
-  it("requires a whole older page, accepts equal dates, and never stops on an empty page", () => {
-    const stop = summaryPageStop(Date.parse("2026-08-10T12:00:00Z"), "support_created_on");
-    const row = (date: string) => ({ support_created_on: date });
-    expect(stop([])).toBe(false);
-    expect(stop([row("2026-08-10T12:00:00Z"), row("2026-08-10T12:00:00Z"), row("2026-08-09T12:00:00Z")])).toBe(false);
-    expect(stop([row("2026-08-09T12:00:00Z"), row("2026-08-08T12:00:00Z")])).toBe(true);
-  });
-  it("disables early stopping permanently after an invalid timestamp", () => {
-    const stop = summaryPageStop(Date.parse("2026-08-10T12:00:00Z"), "purchased_on");
-    expect(stop([{ purchased_on: "invalid" }])).toBe(false);
-    expect(stop([{ purchased_on: "2026-08-01T12:00:00Z" }])).toBe(false);
+    expect(summarize([], [], 30, new Date(), 2).supports).toEqual({ count: 0, total_by_currency: {} });
   });
   it("fails honestly on unusable data", () => {
     const now = new Date("2026-09-09T12:00:00Z");

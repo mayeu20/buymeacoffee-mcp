@@ -11,9 +11,13 @@ See recent supporters, Extras purchases, memberships, and totals by currency. Th
 | `list_supporters` | Recent one-off supports, newest first | `limit` (20), `since`, `include_emails` (false), `max_pages` (5) |
 | `list_extra_purchases` | Recent Extras purchases | `limit` (20), `since`, `include_emails` (false), `max_pages` (5) |
 | `list_subscriptions` | Membership records or an empty result with a message | `include_emails` (false), `max_pages` (5) |
-| `summary` | Supports and Extras totals by currency, excluding refunds and revoked purchases | `days` (30), `max_pages` (10) |
+| `summary` | Supports and Extras totals by currency, with a separate free support count | `days` (30), `max_pages` (20) |
 
-`limit` accepts 1 to 100. `days` accepts 1 to 365. `since` accepts an ISO date or a timestamp with a timezone. `max_pages` accepts 1 to 20 per endpoint. Requests are spaced at least one second apart. List results report `has_more`. Subscriptions and summaries return an error if the page cap leaves data unread. Missing normalized fields are `null`.
+`limit` accepts 1 to 100. `days` accepts 1 to 365. `since` accepts an ISO date or a timestamp with a timezone. `max_pages` accepts 1 to 20 per endpoint. Requests are spaced at least one second apart. List results report `has_more`. Subscriptions return an error if the page cap leaves data unread. Missing normalized fields are `null`.
+
+Summary checks newest-first ordering within and across pages for each endpoint. It stops after a whole page falls before the window, provided no ordering break was seen. A final page with `next_page_url: null` always completes the walk. If ordering breaks, summary keeps walking and returns an error if the cap leaves pages unread. `early_stop` says whether older pages were skipped; `pages_fetched` counts all fetched pages across both endpoints. The API serves five rows per page.
+
+Summary excludes refunded supports and revoked purchases. `supports.count` includes free supports. `supports.free_count` counts non-refunded, in-window supports with amount zero, including free downloads. Subtract it from `supports.count` for the paid support count. Currency totals are unchanged.
 
 ## Getting a token
 

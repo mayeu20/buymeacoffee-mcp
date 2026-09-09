@@ -50,31 +50,10 @@ export function purchase(row: Row) {
   };
 }
 
-// Each endpoint gets its own state. A broken order cannot become trusted again.
-export function summaryPageStop(from: number, dateKey: "support_created_on" | "purchased_on") {
-  let previous = Infinity;
-  let ordered = true;
-  return (rows: Row[]): boolean => {
-    let allBefore = rows.length > 0;
-    for (const row of rows) {
-      const time = timestamp(row[dateKey]);
-      if (time === null) {
-        ordered = false;
-        allBefore = false;
-        continue;
-      }
-      if (time > previous) ordered = false;
-      if (time >= from) allBefore = false;
-      previous = time;
-    }
-    return ordered && allBefore;
-  };
-}
-
-export function summarize(supporters: Row[], purchases: Row[], days: number, now: Date, pagesFetched: number, earlyStop = false) {
+export function summarize(supporters: Row[], purchases: Row[], days: number, now: Date, pagesFetched: number) {
   const to = now.getTime();
   const from = to - days * 86_400_000;
-  const supports = { count: 0, free_count: 0, total_by_currency: {} as Record<string, number> };
+  const supports = { count: 0, total_by_currency: {} as Record<string, number> };
   const extras = { count: 0, total_by_currency: {} as Record<string, number> };
   const excluded = { refunded_supports: 0, revoked_extras: 0 };
   const within = (date: unknown): boolean => {
@@ -82,7 +61,7 @@ export function summarize(supporters: Row[], purchases: Row[], days: number, now
     if (time === null) throw new ApiError("Cannot summarize a record with a missing or invalid date.");
     return time >= from && time <= to;
   };
-  const add = (target: typeof extras, amount: number | null, currency: string | null) => {
+  const add = (target: typeof supports, amount: number | null, currency: string | null) => {
     if (amount === null || !currency || !/^[A-Z]{3}$/.test(currency)) {
       throw new ApiError("Cannot summarize a record with a missing or invalid amount or currency.");
     }
@@ -95,10 +74,7 @@ export function summarize(supporters: Row[], purchases: Row[], days: number, now
     const item = supporter(row);
     if (!within(item.created_at)) continue;
     if (item.refunded) excluded.refunded_supports++;
-    else {
-      add(supports, item.amount, item.currency);
-      if (item.amount === 0) supports.free_count++;
-    }
+    else add(supports, item.amount, item.currency);
   }
   for (const row of purchases) {
     const item = purchase(row);
@@ -106,5 +82,5 @@ export function summarize(supporters: Row[], purchases: Row[], days: number, now
     if (item.revoked) excluded.revoked_extras++;
     else add(extras, item.amount, item.currency);
   }
-  return { window_days: days, from: new Date(from).toISOString(), to: now.toISOString(), supports, extras, excluded, pages_fetched: pagesFetched, early_stop: earlyStop };
+  return { window_days: days, from: new Date(from).toISOString(), to: now.toISOString(), supports, extras, excluded, pages_fetched: pagesFetched };
 }
