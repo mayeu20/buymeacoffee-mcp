@@ -1,0 +1,31 @@
+{
+  "current_page": 2,
+  "data": [
+    {
+      "support_id": 102,
+      "payer_name": "Robin",
+      "support_email": "robin@example.com",
+      "support_coffee_price": 3,
+      "support_coffees": "1",
+      "support_currency": "EUR",
+      "support_note": null,
+      "support_created_on": "2026-09-07 08:00:00",
+      "is_refunded": 0,
+      "country": "FR"
+    },
+    {
+      "support_id": 101,
+      "payer_name": "Sam",
+      "payer_email": "sam@example.com",
+      "support_coffee_price": "4.00",
+      "support_coffees": 1,
+      "support_currency": "USD",
+      "support_note": null,
+      "support_created_on": "2026-07-01 08:00:00",
+      "is_refunded": false,
+      "country": "US"
+    }
+  ],
+  "next_page_url": null,
+  "per_page": 2
+}

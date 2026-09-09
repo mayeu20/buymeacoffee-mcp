@@ -1,0 +1,37 @@
+{
+  "current_page": 1,
+  "data": [
+    {
+      "purchase_id": 203,
+      "purchased_on": "2026-09-09 08:00:00",
+      "purchase_amount": "8.00",
+      "total_paid_amount": "10.00",
+      "purchase_currency": "USD",
+      "payer_email": "jamie@example.com",
+      "quantity": 2,
+      "extra": { "reward_id": 42, "reward_title": "Drawing guide" },
+      "support": { "payer_email": "jamie@example.com", "support_id": 104 },
+      "purchase_is_revoked": 0
+    },
+    {
+      "purchase_id": 202,
+      "purchased_on": "2026-09-08 08:00:00",
+      "purchase_amount": 5,
+      "purchase_currency": "EUR",
+      "payer_email": "alex@example.com",
+      "extra": { "reward_id": 43, "reward_title": "Workbook" },
+      "purchase_is_revoked": 1
+    },
+    {
+      "purchase_id": 201,
+      "purchased_on": "2026-07-01 08:00:00",
+      "purchase_amount": "2.00",
+      "purchase_currency": "USD",
+      "payer_email": "sam@example.com",
+      "extra": { "reward_id": 42, "reward_title": "Drawing guide" },
+      "purchase_is_revoked": 0
+    }
+  ],
+  "next_page_url": null,
+  "per_page": 5
+}

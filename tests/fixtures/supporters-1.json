@@ -1,0 +1,32 @@
+{
+  "current_page": 1,
+  "data": [
+    {
+      "support_id": 104,
+      "supporter_name": "Jamie",
+      "payer_email": "jamie@example.com",
+      "support_coffee_price": "5.0000",
+      "support_coffees": 2,
+      "support_currency": "USD",
+      "support_note": "Thanks! Contact jamie@example.com",
+      "support_created_on": "2026-09-09 09:00:00",
+      "is_refunded": null,
+      "country": "GB"
+    },
+    {
+      "support_id": 103,
+      "supporter_name": null,
+      "payer_name": "Alex",
+      "payer_email": "alex@example.com",
+      "support_coffee_price": 10,
+      "support_coffees": 3,
+      "support_currency": "USD",
+      "support_note": null,
+      "support_created_on": "2026-09-08 08:00:00",
+      "is_refunded": "1",
+      "country": null
+    }
+  ],
+  "next_page_url": "/api/v1/supporters?page=2",
+  "per_page": 2
+}
