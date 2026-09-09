@@ -39,12 +39,51 @@ describe("SDK dispatch", () => {
         expect.objectContaining({ name: "Robin", email: "r***@example.com" }),
       ]));
       expect(outputs.list_extra_purchases).toMatchObject({ returned: 3, pages_fetched: 1, has_more: false });
+      expect(outputs.list_supporters).not.toHaveProperty("message");
+      expect(outputs.list_extra_purchases).not.toHaveProperty("message");
+      expect((outputs.list_supporters!.supporters as unknown[])[0]).toEqual({
+        id: 104, name: "Jamie", email: "j***@example.com", amount: 10, currency: "USD",
+        coffees: 2, note: "Thanks! Contact j***@example.com", created_at: "2026-09-09 09:00:00", refunded: false, country: "GB",
+      });
+      expect((outputs.list_extra_purchases!.purchases as unknown[])[1]).toEqual({
+        id: 202, purchased_at: "2026-09-08 08:00:00", amount: 5, currency: "EUR",
+        quantity: 1, email: "a***@example.com", extra_title: "Workbook", revoked: true,
+      });
       expect(outputs.list_subscriptions).toEqual({ returned: 0, subscriptions: [], message: "No subscriptions" });
       expect(outputs.summary).toMatchObject({ supports: { count: 2, total_by_currency: { USD: 10, EUR: 3 } }, extras: { count: 1, total_by_currency: { USD: 8 } }, excluded: { refunded_supports: 1, revoked_extras: 1 }, pages_fetched: 3 });
       expect(fixture.requests).toHaveLength(7);
       expect(fixture.requests.find((r) => r.url.includes("subscriptions"))?.url).toContain("status=all");
     } finally { await session.close(); await fixture.close(); }
   }, 20_000);
+
+  it.each(["error", "message"])("surfaces empty %s responses in all lists and summarizes zero rows", async (key) => {
+    const fetcher: typeof fetch = async (url) => Response.json({ [key]: `No ${new URL(String(url)).pathname.split("/").pop()}` });
+    const session = await connect({ token: "fixture-token", fetch: fetcher });
+    try {
+      for (const [name, collection, message] of [
+        ["list_supporters", "supporters", "No supporters"],
+        ["list_extra_purchases", "purchases", "No extras"],
+        ["list_subscriptions", "subscriptions", "No subscriptions"],
+      ] as const) {
+        const result = await session.client.callTool({ name, arguments: {} });
+        expect(result.isError).not.toBe(true);
+        expect(result.structuredContent).toEqual({
+          returned: 0, [collection]: [], message,
+          ...(name === "list_subscriptions" ? {} : { pages_fetched: 1, has_more: false }),
+        });
+        expect(result.content).toEqual([{ type: "text", text: JSON.stringify(result.structuredContent, null, 2) }]);
+      }
+      const summary = await session.client.callTool({ name: "summary", arguments: {} });
+      expect(summary.isError).not.toBe(true);
+      expect(summary.structuredContent).toEqual({
+        window_days: 30, from: expect.any(String), to: expect.any(String),
+        supports: { count: 0, total_by_currency: {} },
+        extras: { count: 0, total_by_currency: {} },
+        excluded: { refunded_supports: 0, revoked_extras: 0 }, pages_fetched: 2,
+      });
+      expect(summary.content).toEqual([{ type: "text", text: JSON.stringify(summary.structuredContent, null, 2) }]);
+    } finally { await session.close(); }
+  }, 10_000);
 
   it("filters inclusive dates, enforces limits, and supports explicit full emails", async () => {
     const fixture = await fixtureServer();

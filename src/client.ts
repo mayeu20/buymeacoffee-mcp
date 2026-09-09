@@ -114,9 +114,10 @@ export class ApiClient {
       if (seen.has(url.href)) throw new ApiError("Buy Me a Coffee returned a pagination loop.");
       seen.add(url.href);
       const page = await this.page(url);
-      if (endpoint === "subscriptions" && page.data === undefined && typeof page.message === "string") {
+      const message = typeof page.error === "string" ? page.error : page.message;
+      if (!Object.hasOwn(page, "data") && typeof message === "string") {
         if (rows.length) throw new ApiError("Buy Me a Coffee returned an unexpected message during pagination.");
-        return { rows: [], pages_fetched: pages, has_more: false, message: page.message };
+        return { rows: [], pages_fetched: pages, has_more: false, message };
       }
       if (!Array.isArray(page.data) || !page.data.every(isRow)
         || !(page.next_page_url === null || typeof page.next_page_url === "string")) {

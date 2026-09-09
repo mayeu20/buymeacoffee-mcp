@@ -41,14 +41,14 @@ export function createServer(options: ClientOptions = {}): McpServer {
     inputSchema: listArgs, annotations,
   }, (args) => run(args.include_emails, async () => {
     const page = await api.walk("supporters", args.max_pages, { limit: args.limit, matches: sinceFilter(args.since, "support_created_on") });
-    return { returned: page.rows.length, pages_fetched: page.pages_fetched, has_more: page.has_more, supporters: page.rows.map(supporter) };
+    return { returned: page.rows.length, pages_fetched: page.pages_fetched, has_more: page.has_more, supporters: page.rows.map(supporter), ...(page.message === undefined ? {} : { message: page.message }) };
   }));
   server.registerTool("list_extra_purchases", {
     description: "List recent Extras purchases with emails redacted by default. Full emails belong to the account owner and should be handled accordingly when include_emails is true.",
     inputSchema: listArgs, annotations,
   }, (args) => run(args.include_emails, async () => {
     const page = await api.walk("extras", args.max_pages, { limit: args.limit, matches: sinceFilter(args.since, "purchased_on") });
-    return { returned: page.rows.length, pages_fetched: page.pages_fetched, has_more: page.has_more, purchases: page.rows.map(purchase) };
+    return { returned: page.rows.length, pages_fetched: page.pages_fetched, has_more: page.has_more, purchases: page.rows.map(purchase), ...(page.message === undefined ? {} : { message: page.message }) };
   }));
   server.registerTool("list_subscriptions", {
     description: "Read memberships as supplied by the API, with emails redacted by default. Full emails belong to the account owner and should be handled accordingly when include_emails is true.",

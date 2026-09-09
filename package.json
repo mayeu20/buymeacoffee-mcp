@@ -3,15 +3,33 @@
   "version": "0.1.0",
   "description": "Read your Buy Me a Coffee account through MCP over stdio.",
   "type": "module",
-  "bin": { "buymeacoffee-mcp": "dist/index.js" },
-  "files": ["dist", "README.md", "LICENSE"],
-  "engines": { "node": ">=20" },
+  "bin": {
+    "buymeacoffee-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "license": "MIT",
   "author": "Mathieu Kessler",
-  "repository": { "type": "git", "url": "git+https://github.com/mayeu20/buymeacoffee-mcp.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mayeu20/buymeacoffee-mcp.git"
+  },
   "homepage": "https://github.com/mayeu20/buymeacoffee-mcp#readme",
-  "bugs": { "url": "https://github.com/mayeu20/buymeacoffee-mcp/issues" },
-  "keywords": ["mcp", "model-context-protocol", "buymeacoffee", "creator"],
+  "bugs": {
+    "url": "https://github.com/mayeu20/buymeacoffee-mcp/issues"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "buymeacoffee",
+    "creator"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
@@ -27,5 +45,6 @@
     "tsx": "^4.20.0",
     "typescript": "^5.9.0",
     "vitest": "^3.2.0"
-  }
+  },
+  "mcpName": "io.github.mayeu20/buymeacoffee-mcp"
 }

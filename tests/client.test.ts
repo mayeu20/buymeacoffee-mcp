@@ -57,6 +57,25 @@ describe("HTTP client", () => {
     expect(fetcher).not.toHaveBeenCalled();
   });
   it.each([
+    ["supporters", "error"], ["supporters", "message"],
+    ["extras", "error"], ["extras", "message"],
+    ["subscriptions", "error"], ["subscriptions", "message"],
+  ] as const)("accepts empty %s responses under %s", async (endpoint, key) => {
+    const message = `No ${endpoint}`;
+    const fetcher = vi.fn<typeof fetch>(async () => Response.json({ [key]: message }));
+    const api = new ApiClient({ token: "fixture-token", fetch: fetcher });
+    expect(await api.walk(endpoint, 5)).toEqual({ rows: [], has_more: false, pages_fetched: 1, message });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+  it.each(["supporters", "extras", "subscriptions"] as const)("rejects an empty message after collected %s rows", async (endpoint) => {
+    const fetcher = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(page([{ payer_name: "Synthetic supporter" }], `${API_BASE}${endpoint}?page=2`))
+      .mockResolvedValueOnce(Response.json({ error: `No ${endpoint}` }));
+    const api = new ApiClient({ token: "fixture-token", fetch: fetcher });
+    await expect(api.walk(endpoint, 5)).rejects.toThrow("unexpected message during pagination");
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+  it.each([
     "https://example.com/api/v1/supporters?page=2",
     "http://developers.buymeacoffee.com/api/v1/supporters?page=2",
     "https://user:pass@developers.buymeacoffee.com/api/v1/supporters?page=2",
@@ -77,7 +96,7 @@ describe("HTTP client", () => {
     await expect(new ApiClient({ token: "fixture-token", fetch: fetcher }).walk("supporters", 5)).rejects.toThrow("pagination loop");
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
-  it.each(["not JSON", "[]", '{"data":[1],"next_page_url":null}', '{"data":[]}'])("rejects malformed API responses %s", async (body) => {
+  it.each(["not JSON", "[]", '{"data":[1],"next_page_url":null}', '{"data":[]}', '{"error":123}', '{"message":null}', '{"data":null,"error":"No supporters"}'])("rejects malformed API responses %s", async (body) => {
     const api = new ApiClient({ token: "fixture-token", fetch: async () => new Response(body) });
     await expect(api.walk("supporters", 1)).rejects.toThrow(/invalid JSON|unexpected/);
   });

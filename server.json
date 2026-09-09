@@ -1,0 +1,30 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.mayeu20/buymeacoffee-mcp",
+  "title": "Buy Me a Coffee (read-only)",
+  "description": "Read your own Buy Me a Coffee supporters, Extras purchases, memberships and totals.",
+  "version": "0.1.0",
+  "repository": {
+    "url": "https://github.com/mayeu20/buymeacoffee-mcp",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "buymeacoffee-mcp",
+      "version": "0.1.0",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "BMAC_TOKEN",
+          "description": "Buy Me a Coffee personal access token (read-only API).",
+          "isRequired": true,
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}

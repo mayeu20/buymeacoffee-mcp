@@ -91,6 +91,8 @@ npm pack --dry-run
 
 Tests use synthetic fixtures and a local HTTP server. The live test is skipped unless both `BMAC_LIVE=1` and `BMAC_TOKEN` are set. It uses your real account and makes three read-only requests. Never put a token in a tracked file.
 
+`scripts/probe-shape.mjs` prints the API response shape without values, for verifying against a real account.
+
 The API documentation is marked unmaintained. Field mappings, date assumptions, and page-cap behavior are recorded in `NOTES.md` in the repository.
 
 ## Licence
