@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.2 (2026-09-14)
+
+- 0.1.2: devDependency vitest 3.2.x to 4.1.11, clears GHSA-5xrq-8626-4rwp and GHSA-82fw-gwwq-j7x9 reported against the declared dependencies; no runtime change.
+- Vitest was never shipped to consumers: it is a devDependency, and `files` includes only `dist`, `README.md`, and `LICENSE`.
+
 ## 0.1.1
 
 - summary: stop walking once a whole page is older than the window while the observed order stays newest-first; report `early_stop`; add `supports.free_count` for zero-amount supports; default `max_pages` 20.

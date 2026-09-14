@@ -1,6 +1,6 @@
 {
   "name": "buymeacoffee-mcp",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Read your Buy Me a Coffee account through MCP over stdio.",
   "type": "module",
   "bin": {
@@ -44,7 +44,7 @@
     "@types/node": "^20.19.0",
     "tsx": "^4.20.0",
     "typescript": "^5.9.0",
-    "vitest": "^3.2.0"
+    "vitest": "^4.1.11"
   },
   "mcpName": "io.github.mayeu20/buymeacoffee-mcp"
 }
