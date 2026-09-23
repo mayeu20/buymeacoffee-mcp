@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.3 (2026-09-23)
+
+- Describe every input field of every tool. All 12 arguments across the four tools now carry a schema description, so a client shows the caller what a field means and how it fails.
+- The descriptions name the differences a caller cannot guess: `since` filters after fetching rather than at the API, so too little `max_pages` gives a partial window and not an error; `limit` counts matching rows and not rows read; the two list tools return a partial result with `has_more` at the page cap while `list_subscriptions` and `summary` refuse and return an error.
+- `include_emails` now says in the schema what turning it on does, not just what it returns.
+- Report version 0.1.3 on connect. The server had advertised 0.1.1 since that release while npm shipped 0.1.2, and the handshake value is the only version a user can read. The User-Agent's version string is deliberately left alone: it is a known-good fingerprint against an API that answers 403 to the wrong one.
+- Add `tests/metadata.test.ts`: every input field must carry a description, the count of fields inspected is asserted so an empty enumeration cannot pass, every `include_emails` description must keep its warning, and package.json, server.json and the advertised version must agree.
+- No change to any tool's behaviour, arguments, defaults or output.
+
 ## 0.1.2 (2026-09-14)
 
 - 0.1.2: devDependency vitest 3.2.x to 4.1.11, clears GHSA-5xrq-8626-4rwp and GHSA-82fw-gwwq-j7x9 reported against the declared dependencies; no runtime change.

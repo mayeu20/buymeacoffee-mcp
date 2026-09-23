@@ -13,7 +13,14 @@ See recent supporters, Extras purchases, memberships, and totals by currency. Th
 | `list_subscriptions` | Membership records or an empty result with a message | `include_emails` (false), `max_pages` (5) |
 | `summary` | Supports and Extras totals by currency, with a separate free support count | `days` (30), `max_pages` (20) |
 
-`limit` accepts 1 to 100. `days` accepts 1 to 365. `since` accepts an ISO date or a timestamp with a timezone. `max_pages` accepts 1 to 20 per endpoint. Requests are spaced at least one second apart. List results report `has_more`. Subscriptions return an error if the page cap leaves data unread. Missing normalized fields are `null`.
+`limit` accepts 1 to 100. `days` accepts 1 to 365. `since` accepts an ISO date or a timestamp with a timezone. `max_pages` accepts 1 to 20 per endpoint. Requests are spaced at least one second apart, so a 20-page walk takes about 20 seconds. Missing normalized fields are `null`. Every argument also carries its own description in the tool schema, so your client can show you this detail inline.
+
+The two list tools and the two counting tools behave differently when they run out of pages, and it is the difference worth knowing:
+
+- `list_supporters` and `list_extra_purchases` return what they found and set `has_more`. A result is not the whole story until `has_more` is false.
+- `list_subscriptions` and `summary` return an error instead, naming the cap. Neither will hand back a partial membership list or a total computed over part of the window, because a short total reads exactly like a real one.
+
+`since` filters after the rows are fetched rather than at the API, so asking for more history than `max_pages` covers gives you a partial window, not an error.
 
 Summary checks newest-first ordering within and across pages for each endpoint. It stops after a whole page falls before the window, provided no ordering break was seen. A final page with `next_page_url: null` always completes the walk. If ordering breaks, summary keeps walking and returns an error if the cap leaves pages unread. `early_stop` says whether older pages were skipped; `pages_fetched` counts all fetched pages across both endpoints. The API serves five rows per page.
 

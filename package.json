@@ -1,6 +1,6 @@
 {
   "name": "buymeacoffee-mcp",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Read your Buy Me a Coffee account through MCP over stdio.",
   "type": "module",
   "bin": {

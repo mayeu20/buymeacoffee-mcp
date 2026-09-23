@@ -6,15 +6,45 @@ import { protectJson } from "./redact.js";
 import { purchase, summarize, summaryPageStop, supporter, timestamp } from "./summary.js";
 
 export function createServer(options: ClientOptions = {}): McpServer {
-  const server = new McpServer({ name: "buymeacoffee-mcp", version: "0.1.1" });
+  // Kept in step with package.json and server.json by tests/metadata.test.ts. This literal
+  // had been stranded at 0.1.1 through 0.1.2: it is what the client reads on connect, so it
+  // was the only version a user could see, and it was the wrong one. The fourth version
+  // string, in the client's User-Agent, is deliberately NOT tracked here: that header is a
+  // known-good fingerprint against a Cloudflare-fronted API that answers 403 to the wrong
+  // one, so it is not worth changing for tidiness.
+  const server = new McpServer({ name: "buymeacoffee-mcp", version: "0.1.3" });
   const api = new ApiClient(options);
-  const emails = z.boolean().default(false);
-  const pages = (defaultValue: number) => z.number().int().min(1).max(20).default(defaultValue);
+  const emails = z.boolean().default(false).describe(
+    'Return supporter email addresses in full instead of redacted. Leave false unless the '
+    + 'account owner has asked for the addresses themselves: these are other people\'s '
+    + 'contact details, and turning this on puts them into the transcript, and into anything '
+    + 'that transcript is later pasted into. Everything else in the record is returned either '
+    + 'way, so answering "who supported and how much" never needs this.');
+  // Every page is one API request and requests are paced one per second across the whole
+  // process, so max_pages is a time budget as much as a size budget. What happens when the
+  // cap is reached differs by tool, and a caller cannot guess which, so each passes its own
+  // ending: the lists return what they have and flag it, summary refuses to total.
+  const pages = (defaultValue: number, onCap: string) => z.number().int().min(1).max(20)
+    .default(defaultValue).describe(
+      `How many API pages to fetch, 1 to 20, default ${defaultValue}. Page size is set by Buy `
+      + 'Me a Coffee, not here. Requests are paced at one per second, so a 20-page walk takes '
+      + `about 20 seconds. ${onCap}`);
   const listArgs = {
-    limit: z.number().int().min(1).max(100).default(20),
-    since: z.union([z.string().date(), z.string().datetime({ offset: true })]).optional(),
+    limit: z.number().int().min(1).max(100).default(20).describe(
+      'Maximum number of rows to return, 1 to 100, newest first. Applied AFTER `since`, so it '
+      + 'counts matching rows and not rows read. Walking stops as soon as this many have been '
+      + 'collected, which is why a small limit is also the cheapest way to query.'),
+    since: z.union([z.string().date(), z.string().datetime({ offset: true })]).optional()
+      .describe(
+        'Keep only records from this moment onward. Either a date, "2026-09-01", or a full '
+        + 'timestamp with an offset, "2026-09-01T00:00:00Z". Filtering happens here after the '
+        + 'rows are fetched, not at the API, so reaching further back than `max_pages` covers '
+        + 'returns a partial window with `has_more` true rather than an error. A record whose '
+        + 'date is missing or unparseable fails the call instead of being dropped silently.'),
     include_emails: emails,
-    max_pages: pages(5),
+    max_pages: pages(5, 'On reaching the cap the rows found so far are returned with '
+      + '`has_more` true; raise it, or narrow with `since`, rather than treating that as the '
+      + 'full result.'),
   };
   const annotations = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true };
   const result = (object: Record<string, unknown>, include: boolean, token: string, isError = false): CallToolResult => {
@@ -52,7 +82,11 @@ export function createServer(options: ClientOptions = {}): McpServer {
   }));
   server.registerTool("list_subscriptions", {
     description: "Read memberships as supplied by the API, with emails redacted by default. Full emails belong to the account owner and should be handled accordingly when include_emails is true.",
-    inputSchema: { include_emails: emails, max_pages: pages(5) }, annotations,
+    inputSchema: {
+      include_emails: emails,
+      max_pages: pages(5, 'This tool refuses a partial answer: if more pages remain at the '
+        + 'cap it returns an error naming the cap rather than an incomplete membership list.'),
+    }, annotations,
   }, (args) => run(args.include_emails, async () => {
     const page = await api.walk("subscriptions", args.max_pages);
     if (page.has_more) throw new ApiError("Subscriptions exceed max_pages. Increase max_pages up to 20 to avoid an incomplete result.");
@@ -60,7 +94,15 @@ export function createServer(options: ClientOptions = {}): McpServer {
   }));
   server.registerTool("summary", {
     description: "Total supports and Extras by currency, counting free supports separately and excluding refunds and revoked purchases. Stops after an older page when observed ordering is newest-first, or returns an error if the page cap prevents completion.",
-    inputSchema: { days: z.number().int().min(1).max(365).default(30), max_pages: pages(20) }, annotations,
+    inputSchema: {
+      days: z.number().int().min(1).max(365).default(30).describe(
+        'Length of the window in days, 1 to 365, counting back from now. The response repeats '
+        + 'the window and the time it was computed, so a total can be read back later without '
+        + 'guessing which days it covered.'),
+      max_pages: pages(20, 'This tool refuses a partial answer: if either walk still has '
+        + 'pages left at the cap it returns an error and no totals, because a total computed '
+        + 'over part of the window reads exactly like a real one.'),
+    }, annotations,
   }, (args) => run(false, async () => {
     const now = new Date();
     const from = now.getTime() - args.days * 86_400_000;
